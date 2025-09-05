@@ -1,66 +1,125 @@
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { computed, type Ref, ref } from "vue";
 
-const tasks = ref([
-  { text: 'Rasen mähen', done: false, high_priority: false, hours: 2 },
-  { text: 'Französisch lernen', done: false, high_priority: true, hours: 1 },
-  { text: 'Einkaufen', done: false, high_priority: true, hours: 5 },
-  { text: 'Abfall rausbringen', done: false, high_priority: true, hours: 4 },
-])
+interface Task {
+  text: string;
+  done: boolean;
+  high_priority: boolean;
+}
 
-const Text = ref('')
-const Prio = ref(false)
-const Hours = ref(0)
+const tasks: Ref<Task[]> = ref([
+  { text: "Rasen mähen", done: false, high_priority: false },
+  { text: "Französisch lernen", done: false, high_priority: true },
+  { text: "Einkaufen", done: false, high_priority: true },
+  { text: "Abfall rausbringen", done: true, high_priority: true },
+]);
+
+const tasksLength = computed(getListLength);
+// const tasksLength = computed(() => tasks.value.length)
+
+const lengthOfDoneTasks = computed(getLengthOfDoneTasks);
+/*const lengthOfDoneTasks = computed(() =>
+    tasks.value.reduce(
+        (sum, task) => task.done ? sum + 1 : sum, 0)
+)*/
+
+const sortedTasks = computed(
+  () =>
+    tasks.value.sort((task1, task2) =>
+      task1.high_priority === task2.high_priority
+        ? 0
+        : task1.high_priority
+          ? -1
+          : 1,
+    ),
+  /*
+      if(task1.high_priority === task2.high_priority){
+        return 0
+      } else if(task1.high_priority){
+          return -1
+      } else {
+        return 1
+      }
+    * */
+);
+
+function getListLength() {
+  return tasks.value.length;
+}
+
+function getLengthOfDoneTasks() {
+  let length = 0;
+  tasks.value.forEach((task) => {
+    if (task.done) {
+      length++;
+    }
+  });
+  return length;
+}
+
+function getNewTask(): Task {
+  return {
+    text: "",
+    done: false,
+    high_priority: false,
+  };
+}
+
+function deleteTask(taskToDelete: Task) {
+  tasks.value = tasks.value.filter((task) => task !== taskToDelete);
+}
+
+const newTask = ref(getNewTask());
 
 function addTask() {
-  if (!Text.value) return
-  tasks.value.push({
-    text: Text.value,
-    done: false,
-    high_priority: Prio.value,
-    hours: Hours.value
-  })
-  Text.value = ''
-  Prio.value = false
-  Hours.value = 0
+  console.log(newTask.value);
+  tasks.value.push(newTask.value);
+  newTask.value = getNewTask();
 }
-
-function deleteTask(index) {
-  tasks.value.splice(index, 1)
-}
-
-const sortedTasks = computed(() => {
-  return [...tasks.value].sort((a, b) => b.high_priority - a.high_priority)
-})
-
-const doneCount = computed(() => tasks.value.filter(t => t.done).length)
-const openHours = computed(() =>
-    tasks.value.filter(t => !t.done).reduce((sum, t) => sum + t.hours, 0)
-)
 </script>
 
 <template>
   <div class="container">
     <h2>Aufgabenliste</h2>
 
-    <p>{{ doneCount }} von {{ tasks.length }} Tasks sind erledigt, {{ openHours }} h Aufwand offen</p>
+    <p>{{ lengthOfDoneTasks }} von {{ tasksLength }} Tasks sind erledigt</p>
 
-    <input v-model="newTaskText" placeholder="Task eingeben...">
-    <input type="checkbox" v-model="newTaskPrio"> Hohe Priorität
-    <input type="number" v-model.number="newTaskHours" placeholder="Stunden">
-    <button @click="addTask">Hinzufügen</button>
+    <div class="form-group">
+      <label for="task">Neuer Task</label>
+      <input
+        class="form-control"
+        id="task"
+        type="text"
+        v-model="newTask.text"
+      />
+    </div>
+
+    <label for="prio">
+      <input id="prio" type="checkbox" v-model="newTask.high_priority" />
+      Hohe Priorität
+    </label>
+
+    <div class="form-actions">
+      <button @click="addTask">Task hinzufügen</button>
+    </div>
 
     <ul>
-      <li v-for="(task, index) in sortedTasks" :key="index"
-          :class="{ 'high-priority': task.high_priority, 'is-done': task.done }">
-        <input type="checkbox" v-model="task.done"> ca. {{ task.hours }}h {{ task.text }}
-        <button @click="deleteTask(index)">Löschen</button>
+      <li
+        v-for="task in sortedTasks"
+        :class="{
+          'is-done': task.done,
+          'high-priority': task.high_priority,
+        }"
+      >
+        <input type="checkbox" v-model="task.done" />
+        {{ task.text }}
+        <button @click="deleteTask(task)">🗑️</button>
       </li>
     </ul>
   </div>
 </template>
 
-<style>
+<style scoped>
 .is-done {
   text-decoration: line-through;
 }
