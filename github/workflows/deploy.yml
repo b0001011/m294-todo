@@ -2,14 +2,14 @@ name: Deploy Todolist App
 
 on:
   push:
-    branches: [main]
+    branches: [main]  # Workflow startet bei Push auf main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Setup Node.js
@@ -20,7 +20,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Project
+      - name: Build App
         run: npm run build
 
       - name: Deploy to GitHub Pages
