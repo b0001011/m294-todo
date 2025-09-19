@@ -1,71 +1,36 @@
-name: Deploy Todolist App
-# Name des Workflows, wie er in GitHub Actions angezeigt wird
+name: Deployment for vue application
 
 on:
   push:
-    branches: [ main ]
-    # Dieser Workflow startet automatisch,
-    # wenn ein Commit auf den Branch "main" gepusht wird.
-    # (Das ist meistens der Produktionsbranch)
+    branches:
+      - main
 
 permissions:
-  contents: read      # Repository-Inhalte lesen (Code auschecken)
-  pages: write        # Erlaubt das Schreiben/Veröffentlichen auf GitHub Pages
-  id-token: write     # Wird für die Authentifizierung mit GitHub Pages benötigt
-
-concurrency:
-  group: "pages"          # Sorgt dafür, dass nur ein Deployment gleichzeitig läuft
-  cancel-in-progress: true # Bricht ältere Deployments ab, wenn ein neues kommt
+  pages: write
+  id-token: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    # Ubuntu ist ein kostenloses Linux-System, auf dem GitHub Actions läuft.
-    # "latest" nimmt immer die aktuellste Version.
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        # Holt den Code aus deinem GitHub-Repository in die Action-Umgebung.
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          # Installiert Node.js in Version 18, damit npm-Befehle funktionieren.
+      - name: Setup node
+        uses: actions/setup-node@v5
 
-      - name: Install Dependencies
-        run: npm ci
-        # npm ci installiert alle Pakete (schneller & sauberer als npm install),
-        # basierend auf der package-lock.json.
+      - name: Install packages
+        run: npm i
 
-      - name: Build App
+      - name: Build project
         run: npm run build
-        # Baut deine Todolist App und erstellt eine Produktionsversion
-        # im Ordner "dist" (Vue/React/JS Apps machen das so).
 
-      - name: Upload build files
+      # fix this issue
+      - name: Upload Github Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-          # Lädt den fertigen "dist"-Ordner als Artefakt hoch,
-          # damit der nächste Job ihn deployen kann.
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    # "needs: build" bedeutet: dieser Job startet erst,
-    # wenn der Build-Job erfolgreich fertig ist.
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-      # Legt das GitHub Pages Environment fest
-      # und speichert später die URL der fertigen Seite.
-
-    steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy Github Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        # Nimmt die hochgeladenen Build-Dateien und
-        # veröffentlicht sie auf GitHub Pages.
